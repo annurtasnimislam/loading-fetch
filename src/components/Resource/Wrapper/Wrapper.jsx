@@ -12,5 +12,5 @@ export default function Wrapper({ children }) {
 }
 const styles = {
     container: 'flex-1 justify-center',
-    wrapper: 'flex-1 bg-white px-8',
+    wrapper: 'flex-1 bg-white px-8 py-10',
 }

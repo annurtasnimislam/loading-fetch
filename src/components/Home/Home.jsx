@@ -1,31 +1,70 @@
-import { Octicons } from '@expo/vector-icons'
-import { useContext } from 'react'
-import { View, Text, TouchableOpacity } from 'react-native'
-import UserName from '../../contexts/userName'
-import tw from '../../library/tailwind'
-import { Wrapper } from '../Resource'
+import React, { useState, useRef } from 'react'
+import { Text, Button, ScrollView } from 'react-native'
 
-export default function Home({ navigation }) {
-    const { userName, setUserName } = useContext(UserName)
+const API_URL = 'https://ec.healthxbd.com/api/v1' // Replace with your API endpoint
 
-    const handleSubmit = () => {
-        setUserName('Welcome!')
+const Home = () => {
+    const [info, setInfo] = useState([])
+    const [isLoading, setIsLoading] = useState(false)
+    const [limit, setLimit] = useState(5)
+    const [medicines] = useState('')
+
+    const fetchData = async () => {
+        setIsLoading(true)
+        try {
+            const response = await fetch(`${API_URL}/medicines/?search_medicine=${medicines}&skip=0&limit=${limit}`, {
+                method: 'GET',
+                headers: {
+                    Accept: 'application/json',
+                    'Content-Type': 'application/json',
+                },
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                console.log('success')
+                setInfo(data)
+            }
+        } catch {
+            alert('Please check your internet connection!')
+        }
+        setIsLoading(false)
+    }
+
+    const prevScrollY = useRef(0)
+
+    const handleScroll = (event) => {
+        const currentScrollY = event.nativeEvent.contentOffset.y
+        if (currentScrollY > prevScrollY.current) {
+            console.log('User is scrolling down')
+            fetchData()
+            setLimit((prev) => prev + 5)
+        } else if (currentScrollY < prevScrollY.current) {
+            console.log('User is scrolling up')
+        }
+        prevScrollY.current = currentScrollY
     }
 
     return (
-        // <Wrapper>
-        <View style={tw`flex-1 justify-center items-center bg-white`}>
-            <Octicons style={tw`mx-auto mt-[-60px] mb-[0px]`} name="device-mobile" size={44} color="black" />
-            <Text style={tw`font-700 text-[18px] mb-[10px]`}>React Native Expo Boilerplate</Text>
-
-            <TouchableOpacity>
-                <Text style={tw`log_btn`} onPress={handleSubmit}>
-                    Press
-                </Text>
-            </TouchableOpacity>
-
-            <Text>{userName}</Text>
-        </View>
-        // </Wrapper>
+        <ScrollView onScroll={handleScroll}>
+            <Text>Data:</Text>
+            {info.map((item) => (
+                <Text key={item.id}>{item.name}</Text>
+            ))}
+            {isLoading ? (
+                <Text>Loading...</Text>
+            ) : (
+                <Button
+                    title="Load More"
+                    onPress={() => {
+                        fetchData()
+                        setLimit((prev) => prev + 10)
+                    }}
+                />
+            )}
+        </ScrollView>
     )
 }
+
+export default Home
